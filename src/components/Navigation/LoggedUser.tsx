@@ -1,5 +1,5 @@
 import { FC, useRef, useState } from 'react';
-import { cn, useAuth, useBreakpoint, useOnClickOutside } from '@common';
+import { AvatarSize, cn, useAuth, useBreakpoint, useOnClickOutside } from '@common';
 import { User } from '@supabase/supabase-js';
 import { Avatar } from '../Avatar/Avatar';
 
@@ -13,44 +13,42 @@ interface Props {
    * @type User
    */
   user: User;
+
+  avatarSize?: AvatarSize;
 }
 
-export const LoggedUser: FC<Props> = ({ className, user }) => {
+export const LoggedUser: FC<Props> = ({ className, user, avatarSize = AvatarSize.md }) => {
   const { signOut } = useAuth();
   const { isMobile } = useBreakpoint();
   const [isOpen, setIsOpen] = useState(false);
 
   const modalRef = useRef<HTMLDivElement | null>(null);
 
-  useOnClickOutside(modalRef, () => setIsOpen(false));
+  const trigger = useOnClickOutside(modalRef, ({ isSameTrigger }) => setIsOpen(isSameTrigger));
 
   const classes = {
-    container: ` flex w-fit h-full items-center relative gap-4 text-white ${className}`,
-    expandIcon: 'absolute bottom-[-5px] right-[-5px] text-inherit font-bold text-lg',
+    container: cn('flex w-fit h-full items-center relative gap-4 text-white', className),
+    expandIcon: cn('i-material-symbols-expand-more absolute bottom-[-5px] right-[-5px] text-inherit font-bold text-lg', {
+      'text-yellow': isOpen
+    }),
     text: 'flex text-white hover:text-primary-400 items-center gap-3 text-inherit bg-transparent rounded-lg font-semibold text-sm cursor-pointer',
-    modal: 'absolute top-10  right-[-5px] border-1 border-cBorder rounded-lg px-5 py-2 bg-cBackground w-40 cursor-pointer'
+    modal: 'absolute top-10 right-[-5px] border-1 border-cBorder rounded-lg px-5 py-2 bg-cBackground w-40 cursor-pointer'
   };
 
   return isMobile ? (
-    <li className="cursor-pointer" onClick={signOut}>
+    <span className="cursor-pointer" onClick={signOut}>
       Salir
-    </li>
+    </span>
   ) : (
-    <div className={classes.container} ref={modalRef}>
-      <span
-        className="relative cursor-pointer"
-        onClick={() => {
-          setIsOpen(!isOpen);
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <span className={cn('i-material-symbols-expand-more', classes.expandIcon, isOpen && 'text-yellow')} />
-        <Avatar avatar={user.user_metadata.avatar_url} />
+    <div className={classes.container}>
+      <span className="relative cursor-pointer" ref={trigger} onClick={() => setIsOpen(!isOpen)}>
+        <span className={classes.expandIcon} />
+        <Avatar avatar={user.user_metadata.avatar_url} size={avatarSize} />
       </span>
       {/* modal */}
       {isOpen && (
-        <div className={classes.modal}>
-          <p className={classes.text} onMouseDown={(e) => e.stopPropagation()} onClick={signOut}>
+        <div className={classes.modal} ref={modalRef}>
+          <p className={classes.text} onClick={signOut}>
             <span className="i-material-symbols-exit-to-app-rounded" />
             Cerrar sesión
           </p>
